@@ -33,7 +33,7 @@ def get_s3_bucket(bucket, file_path):
 def update_s3_bucket(bucket, file_path):
     client.put_object(Body=binary_body, Bucket=bucket, Key=file_path)
 
-@sched.scheduled_job('cron', day_of_week='mon-sun', hour=12)
+@sched.scheduled_job('cron', day_of_week='mon-sun', hour=11)
 def job():
 
     acount = json.loads(get_s3_bucket("philosched", "aristotle_count")['Body'].read())
