@@ -1,10 +1,10 @@
 import boto3
 import json
 import os
-import schedule
 import time
 import tweepy
 
+from apscheduler.schedulers.blocking import BlockingScheduler
 from datetime import date
 
 
@@ -14,6 +14,8 @@ access_token = os.environ.get("ACCESS_TOKEN")
 access_token_secret = os.environ.get("ACCESS_TOKEN_SECRET")
 aws_access_key = os.environ.get("AWS_ACCESS_KEY")
 aws_secret_key = os.environ.get("AWS_SECRET_KEY")
+
+sched = BlockingScheduler()
 
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 
@@ -31,6 +33,7 @@ def get_s3_bucket(bucket, file_path):
 def update_s3_bucket(bucket, file_path):
     client.put_object(Body=binary_body, Bucket=bucket, Key=file_path)
 
+@sched.scheduled_job('cron', day_of_week='mon-sun', hour=12)
 def job():
 
     acount = json.loads(get_s3_bucket("philosched", "aristotle_count")['Body'].read())
@@ -65,9 +68,4 @@ def job():
             acount = bytes(json.dumps(acount), "utf-8")
             update_s3_bucket("philosched", "aristotle_count")
 
-schedule.every().day.at("12:00").do(job)
-
-while True:
-    schedule.run_pending()
-    time.sleep(1)
-
+sched.start()
