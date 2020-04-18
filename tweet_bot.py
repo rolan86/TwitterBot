@@ -30,10 +30,10 @@ def get_s3_bucket(bucket, file_path):
     response = client.get_object(Bucket=bucket, Key=file_path)
     return response
 
-def update_s3_bucket(bucket, file_path):
+def update_s3_bucket(binary_body, bucket, file_path):
     client.put_object(Body=binary_body, Bucket=bucket, Key=file_path)
 
-@sched.scheduled_job('cron', day_of_week='mon-sun', hour=11)
+@sched.scheduled_job('cron', day_of_week='mon-sun', hour=10)
 def job():
 
     acount = json.loads(get_s3_bucket("philosched", "aristotle_count")['Body'].read())
@@ -52,7 +52,7 @@ def job():
             print("End of the line")
         else:
             line_count+=1
-            while aquotes[line_count]["quote"]==None:
+            while aquotes[line_count]["quote"]==None or len(aquotes[line_count]["quote"])>125:
                 line_count+=1
 
             tweet = aquotes[line_count]["quote"]
@@ -60,12 +60,11 @@ def job():
 
             api.update_status(tweet)
             print (tweet)
-            #TODO: Limit length of tweet
 
             acount["date"] = str(date.today())
             acount["count"] = line_count
 
             acount = bytes(json.dumps(acount), "utf-8")
-            update_s3_bucket("philosched", "aristotle_count")
+            update_s3_bucket(acount, "philosched", "aristotle_count")
 
 sched.start()
